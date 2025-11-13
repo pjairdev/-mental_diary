@@ -15,13 +15,11 @@ class BottomNavBar extends StatelessWidget {
         );
         break;
       case 1:
-        // Página Insights (exemplo)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Página Insights em desenvolvimento")),
         );
         break;
       case 2:
-        // Página Exercícios (exemplo)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Página Exercícios em desenvolvimento")),
         );

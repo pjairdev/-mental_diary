@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color gradientStart = Color(0xFF9FB7D9); // azul suave
-  static const Color gradientEnd = Color(0xFFD3DFE6); // cinza claro
-  static const Color primary = Color(0xFF2B66D6); // botão principal
+  static const Color gradientStart = Color(0xFF9FB7D9);
+  static const Color gradientEnd = Color(0xFFD3DFE6);
+  static const Color primary = Color(0xFF2B66D6);
   static const Color textDark = Color.fromRGBO(31, 41, 51, 1);
 
   static const primary1 = Color(0xFF7BA4FF);

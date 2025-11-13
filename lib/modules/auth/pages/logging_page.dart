@@ -26,7 +26,7 @@ class _LoggingPageState extends State<LoggingPage> {
         const SnackBar(content: Text('Login realizado com sucesso!')),
       );
       Navigator.pushReplacementNamed(context, AppRoutes.home);
-      // TODO: Implementar lógica de login (Firebase, API etc)
+      //lógica da api
     }
   }
 

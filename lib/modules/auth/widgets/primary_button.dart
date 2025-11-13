@@ -18,11 +18,7 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          // Define a cor do texto/ícone (foreground color)
           foregroundColor: const Color.fromARGB(255, 255, 244, 244),
-
-          // Mantém a cor de fundo (background color) se você quiser especificar uma:
-          // backgroundColor: Colors.blue,
         ),
         child: Text(label),
       ),

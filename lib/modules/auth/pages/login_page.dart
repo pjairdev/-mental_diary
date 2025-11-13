@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/social_button.dart';
-import '../widgets/primary_button.dart';
 import '../../../app_router.dart';
-
-// O widget 'OutlinedButtonCustom' não é mais necessário,
-// pois implementamos o OutlinedButton diretamente.
-// import '../widgets/outlined_button_custom.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -62,9 +57,7 @@ class LoginPage extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 15,
-                              color: Color(
-                                0xFF1F2933,
-                              ), // Cor mais clara para o texto
+                              color: Color(0xFF1F2933),
                             ),
                           ),
                         ),
@@ -118,7 +111,7 @@ class LoginPage extends StatelessWidget {
                                 onPressed: () => Navigator.pushNamed(
                                   context,
                                   AppRoutes.signup,
-                                ), // Usando AppRoutes.signup, conforme lógica anterior
+                                ),
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(
                                     color: Colors.white,
@@ -136,7 +129,6 @@ class LoginPage extends StatelessWidget {
                                 child: const Text(
                                   'Criar Nova Conta',
                                   style: TextStyle(
-                                    // Cor já definida por foregroundColor no styleFrom, mas mantemos aqui por segurança
                                     color: Color(0xFF1F2933),
                                     fontWeight: FontWeight.bold,
                                   ),

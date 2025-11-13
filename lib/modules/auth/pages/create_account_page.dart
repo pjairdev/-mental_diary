@@ -25,7 +25,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
       if (!_termsAccepted) return;
-      // TODO: Implementar lógica de criação de conta (Firebase, API etc)
+      //lógica da api
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Conta criada com sucesso!')),
       );
@@ -50,9 +50,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               key: _formKey,
               onChanged: _validateForm,
               child: Column(
-                // 💡 ADICIONADO: Estique a Column verticalmente
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                // Ocupar a altura máxima do pai (o SafeArea)
                 mainAxisSize: MainAxisSize.max,
 
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -124,7 +122,6 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
                   const SizedBox(height: 16),
 
-                  // Checkbox termos
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -145,7 +142,6 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Botão principal
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
