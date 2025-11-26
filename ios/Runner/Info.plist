@@ -16,6 +16,19 @@
 	<string>Teste Flutter</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<string>569173351536-0i50cbpukr24kcv7ilmcjnccslrgka8r.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.569173351536-0i50cbpukr24kcv7ilmcjnccslrgka8r</string>
+			</array>
+		</dict>
+	</array>
+	<!---->
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
