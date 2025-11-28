@@ -1,10 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/social_button.dart';
 import '../../../app_router.dart';
+import '../../../modules/auth/service/google_auth.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
+
+  Future<void> _loginWithGoogle(BuildContext context) async {
+    try {
+      // Carrega tela de progresso
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      final UserCredential? credential =
+          await GoogleSignInService.signInWithGoogle();
+
+      Navigator.pop(context); // Remove o loading
+
+      if (credential != null) {
+        // Login OK → Vai para página principal
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      } else {
+        // Falha inesperada
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Falha ao autenticar com o Google.")),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // Remove loading
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Erro ao fazer login: $e")));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +80,7 @@ class LoginPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: Color(
-                              0xFF1F2933,
-                            ), // Garantindo que o título também seja branco no gradiente
+                            color: Color(0xFF1F2933),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -63,6 +97,8 @@ class LoginPage extends StatelessWidget {
                         ),
                       ],
                     ),
+
+                    // BOTOES
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 28.0,
@@ -81,8 +117,7 @@ class LoginPage extends StatelessWidget {
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF2563EB),
-                                  foregroundColor:
-                                      Colors.white, // 🔹 Texto branco
+                                  foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -136,7 +171,10 @@ class LoginPage extends StatelessWidget {
                               ),
                             ),
                           ),
+
                           const SizedBox(height: 24),
+
+                          // Redes Sociais
                           Column(
                             children: [
                               Container(
@@ -158,17 +196,19 @@ class LoginPage extends StatelessWidget {
                                 style: TextStyle(color: Color(0xFF1F2933)),
                               ),
                               const SizedBox(height: 12),
+
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  // 🔥 LOGIN COM O GOOGLE (COM LÓGICA REAL)
                                   SocialButton(
                                     assetName: 'assets/images/google.png',
-                                    onPressed: () => Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.authGoogle,
-                                    ),
+                                    onPressed: () => _loginWithGoogle(context),
                                   ),
+
                                   const SizedBox(width: 20),
+
+                                  // Botão iOS
                                   SocialButton(
                                     assetName: 'assets/images/ios.png',
                                     onPressed: () => Navigator.pushNamed(

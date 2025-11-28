@@ -24,7 +24,6 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
           await GoogleSignInService.signInWithGoogle();
 
       if (credential != null && mounted) {
-        // Após logar, navega para a home
         Navigator.pushReplacementNamed(context, '/logging');
       }
     } catch (e) {
@@ -49,17 +48,26 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
           height: size.height,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF4A90E2), // azul suave
-                Color(0xFFB0BEC5), // cinza suave
-              ],
+              colors: [Color(0xFF4A90E2), Color(0xFFB0BEC5)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
           ),
+
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.black87,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+
+              const Spacer(), // empurra o conteúdo para o centro
               // LOGO
               const Icon(
                 Icons.person_pin_circle,
@@ -92,7 +100,6 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
                   ),
                 ),
 
-              // BOTÃO GOOGLE
               _loading
                   ? const CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -114,7 +121,10 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.asset('assets/google.png', width: 28),
+                          Image.network(
+                            'https://icones.pro/wp-content/uploads/2021/02/google-icone-symbole-logo-png.png',
+                            width: 28,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             "Entrar com Google",
@@ -126,6 +136,8 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
                         ],
                       ),
                     ),
+
+              const Spacer(),
             ],
           ),
         ),
