@@ -10,7 +10,7 @@ class GoogleSignInService {
     if (!isInitialize) {
       await _googleSignIn.initialize(
         serverClientId:
-            'http://484988555302-d91nev5jn5sit0qoe3oehpgpp58pl5mt.apps.googleusercontent.com',
+            '569173351536-0i50cbpukr24kcv7ilmcjnccslrgka8r.apps.googleusercontent.com',
       );
     }
     isInitialize = true;
