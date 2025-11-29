@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
-import 'package:teste_flutter/modules/auth/service/google_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/bottom_nav_bar.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -16,22 +16,40 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   File? _profileImage;
+  String? googlePhoto;
+  String? googleName;
+
   static const _imageKey = 'profile_image_path';
 
   @override
   void initState() {
     super.initState();
 
-    // Executa somente após a primeira renderização
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadSavedImage();
+    // Executa após layout pronto
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadGoogleUser();
+      await _loadSavedImage();
     });
   }
 
-  /// Carrega a imagem salva com proteção para evitar PlatformException
+  /// Carrega nome e foto da conta Google
+  Future<void> _loadGoogleUser() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        setState(() {
+          googleName = user.displayName ?? "Usuário";
+          googlePhoto = user.photoURL; // URL da foto Google
+        });
+      }
+    } catch (e) {
+      debugPrint("Erro ao carregar dados do Google: $e");
+    }
+  }
+
   Future<void> _loadSavedImage() async {
     try {
-      // Delay pequeno para garantir inicialização do canal nativo
       await Future.delayed(const Duration(milliseconds: 200));
 
       final prefs = await SharedPreferences.getInstance();
@@ -41,7 +59,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (savedPath != null) {
         final file = File(savedPath);
-
         if (await file.exists()) {
           setState(() {
             _profileImage = file;
@@ -49,19 +66,18 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }
     } catch (e) {
-      debugPrint("Erro ao carregar imagem do SharedPreferences: $e");
+      debugPrint("Erro ao carregar imagem salva: $e");
     }
   }
 
-  /// Salva a imagem localmente no diretório do aplicativo
+  /// Salva imagem localmente
   Future<File> _saveImageToAppDir(File image) async {
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = path.basename(image.path);
-    final savedImage = await image.copy('${appDir.path}/$fileName');
-    return savedImage;
+    return image.copy('${appDir.path}/$fileName');
   }
 
-  /// Atualiza a foto de perfil + salva no SharedPreferences
+  /// Troca foto + salva
   Future<void> _setProfileImage(File image) async {
     try {
       final saved = await _saveImageToAppDir(image);
@@ -72,10 +88,10 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
 
       setState(() {
-        _profileImage = saved;
+        _profileImage = saved; // substitui foto do Google
       });
     } catch (e) {
-      debugPrint("Erro ao salvar imagem de perfil: $e");
+      debugPrint("Erro ao salvar imagem manual: $e");
     }
   }
 
@@ -139,9 +155,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _logout() async {
     try {
-      await GoogleSignInService.signOut();
+      await FirebaseAuth.instance.signOut();
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
       }
     } catch (e) {
       print("Erro ao sair: $e");
@@ -150,6 +166,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final imageProvider = _profileImage != null
+        // Se usuário já trocou manualmente -> usa arquivo local
+        ? FileImage(_profileImage!)
+        // Caso contrário -> usa foto Google se existir
+        : (googlePhoto != null
+              ? NetworkImage(googlePhoto!)
+              : const AssetImage('assets/profile_avatar.png'));
+
     return Scaffold(
       backgroundColor: const Color(0xFFE4EAF0),
       body: SafeArea(
@@ -169,6 +193,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Card perfil
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.8),
@@ -180,40 +206,45 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   child: Column(
                     children: [
-                      GestureDetector(
-                        onTap: _showImageOptions,
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            CircleAvatar(
+                      googlePhoto != null
+                          ? CircleAvatar(
                               radius: 55,
                               backgroundColor: Colors.grey[300],
-                              backgroundImage: _profileImage != null
-                                  ? FileImage(_profileImage!)
-                                  : const AssetImage(
-                                          'assets/profile_avatar.png',
-                                        )
-                                        as ImageProvider,
-                            ),
-                            Container(
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF1B9A8),
-                                shape: BoxShape.circle,
+                              backgroundImage: NetworkImage(googlePhoto!),
+                            )
+                          : GestureDetector(
+                              onTap: _showImageOptions,
+                              child: Stack(
+                                alignment: Alignment.bottomRight,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 55,
+                                    backgroundColor: Colors.grey[300],
+                                    backgroundImage:
+                                        imageProvider as ImageProvider,
+                                  ),
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFF1B9A8),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    padding: const EdgeInsets.all(8),
+                                    child: const Icon(
+                                      Icons.edit,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              padding: const EdgeInsets.all(8),
-                              child: const Icon(
-                                Icons.edit,
-                                size: 20,
-                                color: Colors.white,
-                              ),
                             ),
-                          ],
-                        ),
-                      ),
+
                       const SizedBox(height: 16),
-                      const Text(
-                        "[Nome cadastro]",
-                        style: TextStyle(
+
+                      // Nome do usuário Google
+                      Text(
+                        googleName ?? "[Nome do Usuário]",
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
@@ -222,6 +253,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 30),
 
                 _buildOption(
