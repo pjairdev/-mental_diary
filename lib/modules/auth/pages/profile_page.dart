@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as path;
+import 'package:teste_flutter/modules/auth/service/google_auth.dart';
 import '../widgets/bottom_nav_bar.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -12,9 +16,71 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   File? _profileImage;
+  static const _imageKey = 'profile_image_path';
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Executa somente após a primeira renderização
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSavedImage();
+    });
+  }
+
+  /// Carrega a imagem salva com proteção para evitar PlatformException
+  Future<void> _loadSavedImage() async {
+    try {
+      // Delay pequeno para garantir inicialização do canal nativo
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      final prefs = await SharedPreferences.getInstance();
+      final savedPath = prefs.getString(_imageKey);
+
+      if (!mounted) return;
+
+      if (savedPath != null) {
+        final file = File(savedPath);
+
+        if (await file.exists()) {
+          setState(() {
+            _profileImage = file;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Erro ao carregar imagem do SharedPreferences: $e");
+    }
+  }
+
+  /// Salva a imagem localmente no diretório do aplicativo
+  Future<File> _saveImageToAppDir(File image) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final fileName = path.basename(image.path);
+    final savedImage = await image.copy('${appDir.path}/$fileName');
+    return savedImage;
+  }
+
+  /// Atualiza a foto de perfil + salva no SharedPreferences
+  Future<void> _setProfileImage(File image) async {
+    try {
+      final saved = await _saveImageToAppDir(image);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_imageKey, saved.path);
+
+      if (!mounted) return;
+
+      setState(() {
+        _profileImage = saved;
+      });
+    } catch (e) {
+      debugPrint("Erro ao salvar imagem de perfil: $e");
+    }
+  }
 
   Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
+    final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 600,
@@ -22,14 +88,12 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (image != null) {
-      setState(() {
-        _profileImage = File(image.path);
-      });
+      await _setProfileImage(File(image.path));
     }
   }
 
   Future<void> _pickFromCamera() async {
-    final ImagePicker picker = ImagePicker();
+    final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.camera,
       maxWidth: 600,
@@ -37,9 +101,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (image != null) {
-      setState(() {
-        _profileImage = File(image.path);
-      });
+      await _setProfileImage(File(image.path));
     }
   }
 
@@ -73,6 +135,17 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+  }
+
+  Future<void> _logout() async {
+    try {
+      await GoogleSignInService.signOut();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+      }
+    } catch (e) {
+      print("Erro ao sair: $e");
+    }
   }
 
   @override
@@ -150,6 +223,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 30),
+
                 _buildOption(
                   icon: Icons.lock_outline,
                   label: "Segurança e senha",
@@ -165,13 +239,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   label: "Exportar Meus Dados",
                   onTap: () {},
                 ),
+
                 const SizedBox(height: 40),
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.popUntil(context, (route) => route.isFirst);
-                    },
+                    onPressed: _logout,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF1B9A8),
                       shape: RoundedRectangleBorder(
@@ -180,7 +254,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: const Text(
-                      'Sair da Conta',
+                      'Logout',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

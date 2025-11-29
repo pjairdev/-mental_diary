@@ -46,6 +46,8 @@ class BottomNavBar extends StatelessWidget {
           icon: Icon(Icons.book_rounded),
           label: 'Diário',
         ),
+
+        //tirar o insights
         BottomNavigationBarItem(
           icon: Icon(Icons.insights_rounded),
           label: 'Insights',
