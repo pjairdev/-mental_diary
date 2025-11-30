@@ -3,6 +3,7 @@ import '../widgets/mood_chart.dart';
 import '../widgets/thought_focus_card.dart';
 import '../widgets/sleep_emotion_card.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/profile_button.dart';
 import '/core/constants/app_colors.dart';
 
 class HomePage extends StatelessWidget {
@@ -18,16 +19,26 @@ class HomePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
-              Text(
-                "Seus Insights",
-                style: Theme.of(context).textTheme.headlineMedium,
+              // 🔵 FOTO DE PERFIL NO CANTO SUPERIOR DIREITO
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Seus Insights",
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ),
+                  const ProfileButton(),
+                ],
               ),
+
               const SizedBox(height: 4),
               const Text("Padrões identificados de 1 a 30 Junho"),
               const SizedBox(height: 24),
+
               const MoodChartCard(),
               const SizedBox(height: 16),
+
               Row(
                 children: const [
                   Expanded(child: ThoughtFocusCard()),
@@ -35,6 +46,7 @@ class HomePage extends StatelessWidget {
                   Expanded(child: SleepEmotionCard()),
                 ],
               ),
+
               const SizedBox(height: 24),
               const Center(
                 child: Text(
@@ -46,7 +58,7 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 }

@@ -5,6 +5,10 @@ import 'package:teste_flutter/modules/auth/pages/login_page.dart';
 import 'package:teste_flutter/modules/auth/pages/create_account_page.dart';
 import 'package:teste_flutter/modules/auth/pages/logging_page.dart';
 import 'package:teste_flutter/modules/auth/screen/google_login_screen.dart';
+import 'package:teste_flutter/modules/auth/pages/exercise_page.dart';
+
+// IMPORT CORRETO: a página de perfil (não o botão)
+import 'package:teste_flutter/modules/auth/pages/profile_page.dart';
 
 class AppRoutes {
   static const String login = '/';
@@ -13,6 +17,8 @@ class AppRoutes {
   static const String authGoogle = '/auth/google';
   static const String home = '/home';
   static const String authApple = '/auth/apple';
+  static const String exercises = '/exercises';
+  static const String profile = '/profile';
 }
 
 class AppRouter {
@@ -33,8 +39,11 @@ class AppRouter {
       case AppRoutes.authGoogle:
         return MaterialPageRoute(builder: (_) => const GoogleLoginScreen());
 
-      case AppRoutes.authApple:
-        return MaterialPageRoute(builder: (_) => const Placeholder());
+      case AppRoutes.exercises:
+        return MaterialPageRoute(builder: (_) => const ExercisesPage());
+
+      case AppRoutes.profile:
+        return MaterialPageRoute(builder: (_) => const ProfilePage());
 
       default:
         return MaterialPageRoute(

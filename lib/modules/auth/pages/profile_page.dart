@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/bottom_nav_bar.dart';
 
@@ -25,14 +26,12 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
 
-    // Executa após layout pronto
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadGoogleUser();
       await _loadSavedImage();
     });
   }
 
-  /// Carrega nome e foto da conta Google
   Future<void> _loadGoogleUser() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -40,7 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (user != null) {
         setState(() {
           googleName = user.displayName ?? "Usuário";
-          googlePhoto = user.photoURL; // URL da foto Google
+          googlePhoto = user.photoURL;
         });
       }
     } catch (e) {
@@ -70,14 +69,12 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  /// Salva imagem localmente
   Future<File> _saveImageToAppDir(File image) async {
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = path.basename(image.path);
     return image.copy('${appDir.path}/$fileName');
   }
 
-  /// Troca foto + salva
   Future<void> _setProfileImage(File image) async {
     try {
       final saved = await _saveImageToAppDir(image);
@@ -88,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
 
       setState(() {
-        _profileImage = saved; // substitui foto do Google
+        _profileImage = saved;
       });
     } catch (e) {
       debugPrint("Erro ao salvar imagem manual: $e");
@@ -153,9 +150,44 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _confirmLogout() async {
+    final bool? confirmed = await showCupertinoModalPopup<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => CupertinoActionSheet(
+        title: const Text(
+          "Deseja realmente sair?",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        message: const Text(
+          "Você será desconectado da sua conta.",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+        ),
+        actions: [
+          CupertinoActionSheetAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Sair", style: TextStyle(fontSize: 18)),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text("Cancelar", style: TextStyle(fontSize: 17)),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      _logout();
+    }
+  }
+
+  /// Função real de logout
   Future<void> _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
+
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
       }
@@ -167,9 +199,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final imageProvider = _profileImage != null
-        // Se usuário já trocou manualmente -> usa arquivo local
         ? FileImage(_profileImage!)
-        // Caso contrário -> usa foto Google se existir
         : (googlePhoto != null
               ? NetworkImage(googlePhoto!)
               : const AssetImage('assets/profile_avatar.png'));
@@ -194,7 +224,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Card perfil
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.8),
@@ -238,10 +267,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ],
                               ),
                             ),
-
                       const SizedBox(height: 16),
 
-                      // Nome do usuário Google
                       Text(
                         googleName ?? "[Nome do Usuário]",
                         style: const TextStyle(
@@ -277,7 +304,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _logout,
+                    onPressed: _confirmLogout,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF1B9A8),
                       shape: RoundedRectangleBorder(
@@ -300,7 +327,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
     );
   }
 

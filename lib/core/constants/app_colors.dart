@@ -7,7 +7,7 @@ class AppColors {
   static const Color textDark = Color.fromRGBO(31, 41, 51, 1);
 
   static const primary1 = Color(0xFF7BA4FF);
-  static const surface = Color(0xFFF4F6F9);
+  static const surface = Color(0xFFE4EAF0);
   static const cardBlue = Color(0xFFBBD4FF);
   static const cardBeige = Color(0xFFF3EED9);
   static const cardGreen = Color(0xFFCAE5DD);

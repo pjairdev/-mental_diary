@@ -18,9 +18,9 @@ class DiarioMentalApp extends StatelessWidget {
     return MaterialApp(
       title: 'Diário Mental',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      initialRoute: AppRoutes.login,
       onGenerateRoute: AppRouter.generateRoute,
+      initialRoute: AppRoutes.login,
+      theme: AppTheme.light(),
     );
   }
 }
