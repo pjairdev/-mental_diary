@@ -140,15 +140,25 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
 
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isValidForm ? _submit : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8EC3A7),
-                        disabledBackgroundColor: const Color(0xFFBFDACB),
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          127,
+                          189,
+                          156,
+                        ),
+                        disabledBackgroundColor: const Color.fromARGB(
+                          255,
+                          101,
+                          194,
+                          143,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
