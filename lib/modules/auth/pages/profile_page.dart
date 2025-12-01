@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -6,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:http/http.dart' as http;
 import '../widgets/bottom_nav_bar.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -25,43 +28,74 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadGoogleUser();
       await _loadSavedImage();
     });
   }
 
+  // ---------------------------------------------------------------
+  // 🔵 CARREGA USUÁRIO
+  // ---------------------------------------------------------------
   Future<void> _loadGoogleUser() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-      if (user != null) {
+      final isGoogle =
+          user.providerData.any((p) => p.providerId == 'google.com');
+
+      // 🔵 Login Google → usar sempre displayName e photoURL do Firebase Auth
+      if (isGoogle) {
         setState(() {
           googleName = user.displayName ?? "Usuário";
-          googlePhoto = user.photoURL;
+          googlePhoto = user.photoURL; // SEMPRE EXISTE APÓS CORREÇÃO NO LOGIN
+        });
+        return;
+      }
+
+      // 🔵 Email/senha → Carregar do Database
+      final Uri dbUrl = Uri.https(
+        "connect-8d1ed-default-rtdb.firebaseio.com",
+        "/users/${user.uid}.json",
+      );
+
+      final response = await http.get(dbUrl);
+      if (response.statusCode == 200 && response.body != "null") {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          googleName = data["name"] ?? user.email!.split("@")[0];
+          googlePhoto = data["photoUrl"];
+        });
+      } else {
+        setState(() {
+          googleName = user.email!.split("@")[0];
         });
       }
     } catch (e) {
-      debugPrint("Erro ao carregar dados do Google: $e");
+      debugPrint("Erro ao carregar usuário: $e");
     }
   }
 
+  // ---------------------------------------------------------------
+  // 🔵 NÃO CARREGA CACHE PARA GOOGLE LOGIN
+  // ---------------------------------------------------------------
   Future<void> _loadSavedImage() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 200));
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null &&
+          user.providerData.any((p) => p.providerId == 'google.com')) {
+        return; // Google NÃO usa cache
+      }
 
       final prefs = await SharedPreferences.getInstance();
       final savedPath = prefs.getString(_imageKey);
 
-      if (!mounted) return;
-
       if (savedPath != null) {
         final file = File(savedPath);
         if (await file.exists()) {
-          setState(() {
-            _profileImage = file;
-          });
+          setState(() => _profileImage = file);
         }
       }
     } catch (e) {
@@ -69,53 +103,84 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // ---------------------------------------------------------------
+  // 🔵 SALVA IMAGEM LOCAL
+  // ---------------------------------------------------------------
   Future<File> _saveImageToAppDir(File image) async {
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = path.basename(image.path);
     return image.copy('${appDir.path}/$fileName');
   }
 
+  // ---------------------------------------------------------------
+  // 🔵 ENVIA IMAGEM AO STORAGE + SALVA URL NO DATABASE
+  // ---------------------------------------------------------------
   Future<void> _setProfileImage(File image) async {
     try {
-      final saved = await _saveImageToAppDir(image);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
+      final isGoogle =
+          user.providerData.any((p) => p.providerId == 'google.com');
+
+      if (isGoogle) return; // segurança extra
+
+      // Storage
+      final ref =
+          FirebaseStorage.instance.ref().child("users/${user.uid}/profile.jpg");
+
+      await ref.putFile(image);
+
+      final url = await ref.getDownloadURL();
+
+      // DB
+      final Uri dbUrl = Uri.https(
+        "connect-8d1ed-default-rtdb.firebaseio.com",
+        "/users/${user.uid}.json",
+      );
+
+      await http.patch(
+        dbUrl,
+        body: jsonEncode({"photoUrl": url}),
+      );
+
+      // Cache
+      final saved = await _saveImageToAppDir(image);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_imageKey, saved.path);
 
-      if (!mounted) return;
-
       setState(() {
         _profileImage = saved;
+        googlePhoto = url;
       });
     } catch (e) {
-      debugPrint("Erro ao salvar imagem manual: $e");
+      debugPrint("Erro ao enviar imagem: $e");
     }
   }
 
+  // ---------------------------------------------------------------
+  // 🔵 ESCOLHER IMAGEM
+  // ---------------------------------------------------------------
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
+    final XFile? img = await picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 600,
       imageQuality: 85,
     );
 
-    if (image != null) {
-      await _setProfileImage(File(image.path));
-    }
+    if (img != null) await _setProfileImage(File(img.path));
   }
 
   Future<void> _pickFromCamera() async {
     final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
+    final XFile? img = await picker.pickImage(
       source: ImageSource.camera,
       maxWidth: 600,
       imageQuality: 85,
     );
 
-    if (image != null) {
-      await _setProfileImage(File(image.path));
-    }
+    if (img != null) await _setProfileImage(File(img.path));
   }
 
   void _showImageOptions() {
@@ -130,7 +195,7 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Tirar foto'),
+              title: const Text("Tirar foto"),
               onTap: () {
                 Navigator.pop(context);
                 _pickFromCamera();
@@ -138,7 +203,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Escolher da galeria'),
+              title: const Text("Escolher da galeria"),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage();
@@ -150,6 +215,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // ---------------------------------------------------------------
+  // 🔵 LOGOUT
+  // ---------------------------------------------------------------
   Future<void> _confirmLogout() async {
     final bool? confirmed = await showCupertinoModalPopup<bool>(
       context: context,
@@ -178,31 +246,38 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
 
-    if (confirmed == true) {
-      _logout();
-    }
+    if (confirmed == true) _logout();
   }
 
-  /// Função real de logout
   Future<void> _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
-
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
       }
     } catch (e) {
-      print("Erro ao sair: $e");
+      debugPrint("Erro ao sair: $e");
     }
   }
 
+  // ---------------------------------------------------------------
+  // 🔵 UI
+  // ---------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final imageProvider = _profileImage != null
-        ? FileImage(_profileImage!)
-        : (googlePhoto != null
-              ? NetworkImage(googlePhoto!)
-              : const AssetImage('assets/profile_avatar.png'));
+    final user = FirebaseAuth.instance.currentUser;
+    final isGoogle =
+        user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
+
+    // Definição CORRETA da imagem:
+    final ImageProvider imageProvider = isGoogle
+        ? NetworkImage(googlePhoto ?? user?.photoURL ?? "")
+        : (_profileImage != null
+            ? FileImage(_profileImage!)
+            : (googlePhoto != null
+                ? NetworkImage(googlePhoto!)
+                : const AssetImage('assets/profile_avatar.png')
+                    as ImageProvider));
 
     return Scaffold(
       backgroundColor: const Color(0xFFE4EAF0),
@@ -224,51 +299,45 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 20),
 
+                // ---------------------------------------------------------
+                // FOTO DO PERFIL
+                // ---------------------------------------------------------
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 32,
-                    horizontal: 16,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
                   child: Column(
                     children: [
-                      googlePhoto != null
-                          ? CircleAvatar(
+                      GestureDetector(
+                        onTap: isGoogle ? null : _showImageOptions,
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            CircleAvatar(
                               radius: 55,
                               backgroundColor: Colors.grey[300],
-                              backgroundImage: NetworkImage(googlePhoto!),
-                            )
-                          : GestureDetector(
-                              onTap: _showImageOptions,
-                              child: Stack(
-                                alignment: Alignment.bottomRight,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 55,
-                                    backgroundColor: Colors.grey[300],
-                                    backgroundImage:
-                                        imageProvider as ImageProvider,
-                                  ),
-                                  Container(
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFF1B9A8),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    padding: const EdgeInsets.all(8),
-                                    child: const Icon(
-                                      Icons.edit,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              backgroundImage: imageProvider,
                             ),
+                            if (!isGoogle)
+                              Container(
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF1B9A8),
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(8),
+                                child: const Icon(
+                                  Icons.edit,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 16),
-
                       Text(
                         googleName ?? "[Nome do Usuário]",
                         style: const TextStyle(
@@ -313,7 +382,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: const Text(
-                      'Logout',
+                      "Logout",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -354,7 +423,10 @@ class _ProfilePageState extends State<ProfilePage> {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(fontSize: 16, color: Colors.black87),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
             ],

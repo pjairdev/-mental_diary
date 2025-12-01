@@ -1,0 +1,31 @@
+{
+  "users": {
+    "-OfMQsiXu0peegcEm4tu": {
+      "createdAt": "2025-12-01T01:02:33.063454",
+      "email": "osvaldo@gmail.com",
+      "name": "osvaldo",
+      "photoUrl": "",
+      "uid": "snwvqqgrvkeLwU1o8WV9PIRwu7Z2"
+    },
+    "-OfMXkLgP1ExUHZZxI0P": {
+      "createdAt": "2025-12-01T01:32:35.315250",
+      "email": "wesley@gmail.com",
+      "name": "Wesley",
+      "photoUrl": "",
+      "uid": "Qxdbjorfy6hdA8niFplIHyzJHtn1"
+    },
+    "-OfMlt1eDqyeh7qiTXGt": {
+      "createdAt": "2025-12-01T02:39:30.934889",
+      "email": "tprofile@gmail.com",
+      "name": "test profile",
+      "uid": "1GYtbeRvYJRw2JkEZ80PZdvBejD3"
+    },
+    "id_aleatorio": {
+      "createdAt": "2025-01-01T12:00:00",
+      "email": "teste@gmail.com",
+      "name": "id aleatorio",
+      "photoUrl": "https://firebasestorage.googleapis.com/v0/b/SEU_BUCKET/o/users%2Fid_aleatorio%2Fprofile.jpg?alt=media",
+      "uid": "djnasdjfbfjbfofojnjnojfon1js2"
+    }
+  }
+}
