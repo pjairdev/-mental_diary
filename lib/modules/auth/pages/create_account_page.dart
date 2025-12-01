@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/custom_text_field.dart';
+import 'package:teste_flutter/modules/auth/pages/terms_page.dart';
+
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
@@ -239,12 +241,25 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                           _validateForm();
                         },
                       ),
-                      const Expanded(
-                        child: Text(
-                          'Li e aceito os termos de uso e a política de privacidade',
-                          style: TextStyle(fontSize: 14, color: Colors.black87),
-                        ),
-                      ),
+                      Expanded(
+  child: GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const TermsPage()),
+      );
+    },
+    child: const Text(
+      'Li e aceito os termos de uso e a política de privacidade',
+      style: TextStyle(
+        fontSize: 14,
+        color: Colors.blue,
+        decoration: TextDecoration.underline,
+      ),
+    ),
+  ),
+),
+
                     ],
                   ),
                   const SizedBox(height: 18),
